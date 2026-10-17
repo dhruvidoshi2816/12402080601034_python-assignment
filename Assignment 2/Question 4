@@ -1,0 +1,86 @@
+import mysql.connector
+
+try:
+    con = mysql.connector.connect(
+        host=input("Host: "),
+        user=input("Username: "),
+        password=input("Password: "),
+        database=input("Database name: ")
+    )
+
+    cur = con.cursor()
+
+    allowed_columns = {
+        "student.name": "s.name",
+        "student.spi": "s.spi",
+        "student.id": "s.student_id",
+        "course.name": "c.name",
+        "course.id": "c.course_id"
+    }
+
+    columns = input("Enter columns separated by commas: ").split(",")
+    columns = [col.strip() for col in columns]
+
+    if not columns or any(col not in allowed_columns for col in columns):
+        raise ValueError("Invalid column selected")
+
+    conditions = []
+    values = []
+
+    course_id = input("Course ID (leave blank for all): ").strip()
+
+    if course_id:
+        conditions.append("c.course_id = %s")
+        values.append(course_id)
+
+    min_spi = input("Minimum SPI (leave blank to skip): ").strip()
+
+    if min_spi:
+        conditions.append("s.spi >= %s")
+        values.append(float(min_spi))
+
+    order = input("Sort by (student.spi or student.name): ").strip()
+    direction = input("Sort direction (ASC or DESC): ").strip().upper()
+
+    if order not in ("student.spi", "student.name"):
+        raise ValueError("Invalid sort column")
+
+    if direction not in ("ASC", "DESC"):
+        raise ValueError("Invalid sort direction")
+
+    limit = int(input("Limit (1-1000): "))
+
+    if not 1 <= limit <= 1000:
+        raise ValueError("Limit must be between 1 and 1000")
+
+    selected = ", ".join(allowed_columns[col] for col in columns)
+
+    query = f"""
+        SELECT {selected}
+        FROM Student s
+        JOIN CourseRegistration r ON s.student_id = r.student_id
+        JOIN Course c ON r.course_id = c.course_id
+    """
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    query += f" ORDER BY {allowed_columns[order]} {direction}"
+    query += f" LIMIT {limit}"
+
+    print("SQL_OK")
+    print(query)
+    print("Parameters:", values)
+
+    cur.execute(query, values)
+
+    for row in cur.fetchall():
+        print(*row)
+
+except (mysql.connector.Error, ValueError) as e:
+    print("Error:", e)
+
+finally:
+    if 'con' in locals() and con.is_connected():
+        cur.close()
+        con.close()
