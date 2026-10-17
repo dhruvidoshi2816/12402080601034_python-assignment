@@ -1,0 +1,41 @@
+import re
+from collections import defaultdict, deque
+
+X, T = map(int, input().split())
+n = int(input())
+
+pattern = r"^(\d{2}):(\d{2})\s+(\S+)\s+(\S+)\s+(FAIL|SUCCESS)$"
+
+failures = defaultdict(deque)
+suspicious = {}
+
+for _ in range(n):
+    line = input().strip()
+    match = re.match(pattern, line)
+
+    if not match:
+        continue
+
+    hour, minute, user, ip, status = match.groups()
+    timestamp = hour + ":" + minute
+    current_time = int(hour) * 60 + int(minute)
+
+    if status == "FAIL":
+        q = failures[user]
+        q.append((current_time, ip))
+
+        while q and current_time - q[0][0] > T:
+            q.popleft()
+
+    else:
+        q = failures[user]
+
+        while q and current_time - q[0][0] > T:
+            q.popleft()
+
+        if len(q) >= X and any(old_ip != ip for _, old_ip in q):
+            if user not in suspicious:
+                suspicious[user] = timestamp
+
+for user in sorted(suspicious):
+    print(user, suspicious[user])
