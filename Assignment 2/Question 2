@@ -1,0 +1,42 @@
+from bs4 import BeautifulSoup
+import re
+
+p, k = map(int, input().split())
+products = {}
+
+for _ in range(p):
+    path = input().strip()
+
+    with open(path, "r", encoding="utf-8", errors="ignore") as file:
+        soup = BeautifulSoup(file, "html.parser")
+
+    name = soup.find(class_="product-name")
+    price = soup.find(class_="price")
+    rating = soup.find(class_="rating")
+
+    if name and price and rating:
+        name = name.get_text(strip=True)
+
+        price_text = price.get_text(strip=True)
+        price_value = re.sub(r"[^0-9.]", "", price_text)
+
+        rating_text = rating.get_text(strip=True)
+        rating_value = re.sub(r"[^0-9.]", "", rating_text)
+
+        if price_value and rating_value:
+            price_value = float(price_value)
+            rating_value = float(rating_value)
+
+            if name not in products or rating_value > products[name][1]:
+                products[name] = (price_value, rating_value)
+
+result = []
+
+for name, (price, rating) in products.items():
+    result.append((name, price, rating))
+
+result.sort(key=lambda x: (-x[2], x[1], x[0]))
+
+for name, price, rating in result[:k]:
+    price = int(price) if price.is_integer() else price
+    print(name, price, rating)
