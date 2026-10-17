@@ -1,0 +1,30 @@
+import re
+
+file_path = input().strip()
+
+pattern = r'\b[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.(?:com|edu|org)\b'
+
+emails = set()
+
+with open(file_path, "r", errors="ignore") as file:
+    for line in file:
+        found = re.findall(pattern, line, re.IGNORECASE)
+
+        for email in found:
+            emails.add(email.lower())
+
+domains = {}
+
+for email in emails:
+    domain = email.split("@")[1]
+
+    if domain not in domains:
+        domains[domain] = []
+
+    domains[domain].append(email)
+
+for domain in sorted(domains):
+    smallest_email = min(domains[domain])
+    count = len(domains[domain])
+
+    print(domain, count, smallest_email)
