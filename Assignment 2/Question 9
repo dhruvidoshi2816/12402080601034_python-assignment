@@ -1,0 +1,120 @@
+class Product:
+    def __init__(self, pid, name, stock, purchase, selling):
+        self.pid = pid
+        self.name = name
+        self.stock = stock
+        self.purchase = purchase
+        self.selling = selling
+
+    def __str__(self):
+        return (
+            f"{self.pid} {self.name} stock={self.stock} "
+            f"purchase={self.purchase} selling={self.selling}"
+        )
+
+
+class Inventory:
+    def __init__(self):
+        self.products = {}
+
+    def add(self, product):
+        self.products[product.pid] = product
+
+    def delete(self, pid):
+        self.products.pop(pid, None)
+
+    def update(self, pid, stock):
+        if pid in self.products:
+            self.products[pid].stock = stock
+
+    def total_value(self):
+        return sum(
+            p.stock * p.purchase
+            for p in self.products.values()
+        )
+
+    def __add__(self, other):
+        result = Inventory()
+
+        for p in self.products.values():
+            result.add(Product(
+                p.pid, p.name, p.stock,
+                p.purchase, p.selling
+            ))
+
+        for p in other.products.values():
+            if p.pid in result.products:
+                old = result.products[p.pid]
+                old.stock += p.stock
+                old.purchase = min(old.purchase, p.purchase)
+                old.selling = max(old.selling, p.selling)
+            else:
+                result.add(Product(
+                    p.pid, p.name, p.stock,
+                    p.purchase, p.selling
+                ))
+
+        return result
+
+    def compare(self, other):
+        a = self.total_value()
+        b = other.total_value()
+
+        if a > b:
+            print("Inventory A has higher value")
+        elif a < b:
+            print("Inventory B has higher value")
+        else:
+            print("Both inventories have equal value")
+
+    def display(self):
+        for pid in sorted(self.products):
+            print(self.products[pid])
+
+
+a = Inventory()
+b = Inventory()
+
+n = int(input("Number of products in inventory A: "))
+
+for _ in range(n):
+    pid, name, stock, purchase, selling = input().split()
+    a.add(Product(pid, name, int(stock),
+                  float(purchase), float(selling)))
+
+n = int(input("Number of products in inventory B: "))
+
+for _ in range(n):
+    pid, name, stock, purchase, selling = input().split()
+    b.add(Product(pid, name, int(stock),
+                  float(purchase), float(selling)))
+
+q = int(input("Number of operations: "))
+
+for _ in range(q):
+    operation = input().split()
+    command = operation[0].upper()
+
+    if command == "ADD":
+        target, pid, name, stock, purchase, selling = operation
+        inventory = a if target.upper() == "A" else b
+        inventory.add(Product(
+            pid, name, int(stock), float(purchase), float(selling)
+        ))
+
+    elif command == "DELETE":
+        target, pid = operation
+        inventory = a if target.upper() == "A" else b
+        inventory.delete(pid)
+
+    elif command == "UPDATE":
+        target, pid, stock = operation
+        inventory = a if target.upper() == "A" else b
+        inventory.update(pid, int(stock))
+
+    elif command == "MERGE":
+        merged = a + b
+        merged.display()
+
+    elif command == "COMPARE":
+        a.compare(b)
